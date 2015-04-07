@@ -1,28 +1,46 @@
-#
-# Nginx Dockerfile
-#
-# https://github.com/dockerfile/nginx
-#
+FROM phusion/baseimage:0.9.16
+ENV HOME /root
+RUN /etc/my_init.d/00_regen_ssh_host_keys.sh
+CMD ["/sbin/my_init"]
 
-# Pull base image.
-FROM dockerfile/ubuntu
+MAINTAINER Crobays <crobays@userex.nl>
+ENV DOCKER_NAME nginx
+ENV DEBIAN_FRONTEND noninteractive
 
-# Install Nginx.
-RUN apt-get install -y software-properties-common
-RUN add-apt-repository -y ppa:nginx/stable
-RUN apt-get update
-RUN apt-get install -y nginx
-RUN echo "\ndaemon off;" >> /etc/nginx/nginx.conf
+RUN apt-get update && \
+	apt-get -y dist-upgrade && \
+	apt-get install -y software-properties-common && \
+	add-apt-repository -y ppa:nginx/stable && \
+	apt-get update
 
-# Attach volumes.
-VOLUME /etc/nginx/sites-enabled
-VOLUME /var/log/nginx
+RUN apt-get install -y \
+	nginx
 
-# Set working directory.
-WORKDIR /etc/nginx
+# Exposed ENV
+ENV TIMEZONE Etc/UTC
+ENV ENVIRONMENT production
+ENV SERVE_PATH /project/public
+ENV ALLOWED all
+ENV NGINX_CONF nginx-virtual.conf
 
-# Expose ports.
-EXPOSE 80
+VOLUME  ["/project"]
+WORKDIR /project
 
-# Define default command.
-ENTRYPOINT ["nginx"]
+# HTTP ports
+EXPOSE 80 443
+
+RUN echo '/sbin/my_init' > /root/.bash_history
+
+RUN mkdir /etc/service/nginx && echo "#!/bin/bash\nnginx" > /etc/service/nginx/run
+
+RUN echo "#!/bin/bash\necho \"\$TIMEZONE\" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata" > /etc/my_init.d/01-timezone.sh
+ADD /scripts/nginx-config.sh /etc/my_init.d/02-nginx-config.sh
+
+RUN chmod +x /etc/my_init.d/* && chmod +x /etc/service/*/run
+
+# Clean up APT when done.
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ADD /conf /conf
+
+
