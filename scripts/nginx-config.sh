@@ -50,11 +50,11 @@ if [ "$SERVE_PATH" ]
 then
 	mkdir -p "$SERVE_PATH"
 
-	if [ ! -f "$SERVE_PATH/index.html" ]
-	then
-		echo " ==> Creating index.html in $SERVE_PATH"
-		echo "<html><head><title>Nginx</title></head><body><h2>You are running NGINX on Docker!</h2></body></html>" > "$SERVE_PATH/index.html"
-	fi
+	# if [ ! -f "$SERVE_PATH/index.html" ]
+	# then
+	# 	echo " ==> Creating index.html in $SERVE_PATH"
+	# 	echo "<html><head><title>Nginx</title></head><body><h2>You are running NGINX on Docker!</h2></body></html>" > "$SERVE_PATH/index.html"
+	# fi
 	find_replace_add_string_to_file "root \/.*" "root $SERVE_PATH;" /etc/nginx/sites-enabled/virtual.conf "NGINX public path"
 fi
 
